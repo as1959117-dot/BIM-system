@@ -195,6 +195,10 @@ function populatePage(d) {
   // ── Related elements
   buildRelatedElements(d.relatedElements || []);
 
+  // ── Charts and Revit section
+  buildCharts(d);
+  buildRevitSection(d);
+
   // ── Footer
   set("footer-id",  d.docRef    || "—");
   set("footer-rev", d.revision  || "—");
@@ -406,3 +410,221 @@ function showError(msg) {
   const el = document.getElementById("loading-msg");
   if (el) { el.textContent = msg; el.className = "error-msg"; }
 }
+
+// ── CHARTS ───────────────────────────────────────────────────
+// Called after data loads — draws all 4 charts using Chart.js
+
+let chartProgress = null, chartCarbon = null, chartCost = null, chartTimeline = null;
+
+function buildCharts(d) {
+  buildProgressChart(d);
+  buildCarbonChart(d);
+  buildCostChart(d);
+  buildTimelineChart(d);
+}
+
+// 1. Construction Phase Progress — horizontal bar showing approved vs pending vs on hold
+function buildProgressChart(d) {
+  const ctx = document.getElementById("chart-progress");
+  if (!ctx) return;
+  if (chartProgress) chartProgress.destroy();
+
+  const phases = d.phases || [];
+  const labels = phases.map(p => p.phase && p.phase.length > 22 ? p.phase.substring(0,22)+"…" : (p.phase || "Phase"));
+  const approved = phases.map(p => p.status === "Approved" ? 1 : 0);
+  const pending  = phases.map(p => p.status === "Pending"  ? 1 : 0);
+  const onhold   = phases.map(p => p.status === "On Hold"  ? 1 : 0);
+
+  chartProgress = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Approved",  data: approved, backgroundColor: "#1c6b35", borderWidth: 0 },
+        { label: "Pending",   data: pending,  backgroundColor: "#f59e0b", borderWidth: 0 },
+        { label: "On Hold",   data: onhold,   backgroundColor: "#8b1a1a", borderWidth: 0 },
+      ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom", labels: { font: { family:"Arial", size:10 }, boxWidth:12 } },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label } }
+      },
+      scales: {
+        x: { stacked: true, max: 1, display: false },
+        y: { stacked: true, ticks: { font: { family:"Arial", size:9 } } }
+      }
+    }
+  });
+}
+
+// 2. Carbon comparison — grouped bar: Design vs Actual per material
+function buildCarbonChart(d) {
+  const ctx = document.getElementById("chart-carbon");
+  if (!ctx) return;
+  if (chartCarbon) chartCarbon.destroy();
+
+  const designRows = d.carbonDesign || [];
+  const actualRows = d.carbonActual || [];
+  const labels = designRows.map(r => r.material || "—");
+  const designVals = designRows.map(r => parseFloat((r.total||"0").replace(/,/g,"")) || 0);
+  const actualVals = actualRows.map(r => parseFloat((r.total||"0").replace(/,/g,"")) || 0);
+
+  // Add totals bar
+  const dTotal = parseFloat((d.carbonDesignTotal||"0").replace(/,/g,"")) || 0;
+  const aTotal = parseFloat((d.carbonActualTotal||"0").replace(/,/g,"")) || 0;
+  labels.push("TOTAL");
+  designVals.push(dTotal);
+  actualVals.push(aTotal);
+
+  chartCarbon = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Design Estimate", data: designVals, backgroundColor: "#2356a8", borderWidth: 0 },
+        { label: "Actual As-Built", data: actualVals, backgroundColor: "#1c6b35", borderWidth: 0 },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position:"bottom", labels:{ font:{family:"Arial",size:10}, boxWidth:12 } }
+      },
+      scales: {
+        x: { ticks:{ font:{family:"Arial",size:9} } },
+        y: { ticks:{ font:{family:"Arial",size:9} }, title:{ display:true, text:"kgCO2e", font:{family:"Arial",size:9} } }
+      }
+    }
+  });
+}
+
+// 3. Cost breakdown — doughnut chart
+function buildCostChart(d) {
+  const ctx = document.getElementById("chart-cost");
+  if (!ctx) return;
+  if (chartCost) chartCost.destroy();
+
+  const items = d.costItems || [];
+  if (!items.length) return;
+
+  const labels = items.map(r => r.desc && r.desc.length > 30 ? r.desc.substring(0,30)+"…" : r.desc);
+  const vals   = items.map(r => parseFloat((r.total||"0").replace(/,/g,"")) || 0);
+  const colors = ["#1a3a6b","#2356a8","#4a7fd4","#7aa8e8","#a8c8f8","#c8d8f0"];
+
+  chartCost = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels,
+      datasets: [{ data: vals, backgroundColor: colors, borderWidth: 1, borderColor: "#fff" }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position:"bottom", labels:{ font:{family:"Arial",size:9}, boxWidth:12 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: £${ctx.parsed.toLocaleString()}` } }
+      }
+    }
+  });
+}
+
+// 4. Timeline chart — horizontal bar showing phase durations
+function buildTimelineChart(d) {
+  const ctx = document.getElementById("chart-timeline");
+  if (!ctx) return;
+  if (chartTimeline) chartTimeline.destroy();
+
+  // Static timeline data for Beam 145 — update via admin if needed
+  const timelineData = d.timelineData || [
+    { phase:"Setting Out",        planned:3,  actual:3  },
+    { phase:"Formwork",           planned:5,  actual:6  },
+    { phase:"Rebar Delivery",     planned:2,  actual:2  },
+    { phase:"Reinforcement Fix",  planned:4,  actual:4  },
+    { phase:"Pre-Pour Inspection",planned:1,  actual:1  },
+    { phase:"Concrete Pour",      planned:1,  actual:1  },
+    { phase:"Curing",             planned:7,  actual:null },
+    { phase:"QA Testing",         planned:28, actual:null },
+  ];
+
+  chartTimeline = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: timelineData.map(r => r.phase),
+      datasets: [
+        { label:"Planned (days)", data: timelineData.map(r=>r.planned), backgroundColor:"#4a7fd4", borderWidth:0 },
+        { label:"Actual (days)",  data: timelineData.map(r=>r.actual||0), backgroundColor:"#1c6b35", borderWidth:0 },
+      ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      plugins: {
+        legend: { position:"bottom", labels:{ font:{family:"Arial",size:10}, boxWidth:12 } }
+      },
+      scales: {
+        x: { ticks:{ font:{family:"Arial",size:9} }, title:{ display:true, text:"Days", font:{family:"Arial",size:9} } },
+        y: { ticks:{ font:{family:"Arial",size:9} } }
+      }
+    }
+  });
+}
+
+// ── REVIT SKETCHES / GRAPHS SECTION ─────────────────────────
+function buildRevitSection(d) {
+  const wrap = document.getElementById("revit-wrap");
+  if (!wrap) return;
+
+  // Use photos array — filter for Revit/sketch type, or show all with Revit labels
+  const photos = d.photos || [];
+  const revitPhotos = d.revitImages || [];
+
+  // Combine all available images
+  const allImages = [
+    ...revitPhotos.map(p => ({ ...p, isRevit: true })),
+    ...photos.map(p => ({ ...p, isRevit: false }))
+  ];
+
+  if (!allImages.length) {
+    // Show placeholder grid with instructions
+    wrap.innerHTML = `<div class="revit-grid">
+      ${["Revit 3D Model View — Beam 145 in Full Structure",
+         "Revit Structural Plan — Grid C/4 to C/6",
+         "Robot Structural Analysis — Bending Moment Diagram",
+         "Robot Structural Analysis — Shear Force Diagram"].map((title, i) => `
+        <div class="revit-card">
+          <div class="rt">📐 ${title}</div>
+          <div class="revit-placeholder">
+            <div style="font-size:28px">📐</div>
+            <div style="font-weight:bold;color:#1a3a6b;">${title.split("—")[0].trim()}</div>
+            <div style="font-size:9.5px;text-align:center;padding:0 10px;color:#888;">Add image URL in admin panel → Photo URLs field → Save</div>
+          </div>
+          <div class="rc">Upload via admin panel — accepts any image URL (Google Drive, Dropbox, GitHub raw, etc.)</div>
+        </div>`).join("")}
+    </div>`;
+    return;
+  }
+
+  const titles = [
+    "Revit 3D Model View",
+    "Revit Structural Plan",
+    "Robot — Bending Moment Diagram",
+    "Robot — Shear Force Diagram",
+    "Site Photograph",
+    "Structural Sketch",
+  ];
+
+  wrap.innerHTML = `<div class="revit-grid">${
+    allImages.map((img, i) => `
+      <div class="revit-card">
+        <div class="rt">📐 ${img.stage || titles[i] || "BIM View " + (i+1)}</div>
+        ${img.url
+          ? `<img src="${img.url}" alt="${img.stage || "BIM View"}" />`
+          : `<div class="revit-placeholder"><div style="font-size:24px">📐</div><div>Image pending upload</div></div>`
+        }
+        <div class="rc">${img.date || ""} ${img.caption ? "— " + img.caption : ""}</div>
+      </div>`).join("")
+  }</div>`;
+}
+

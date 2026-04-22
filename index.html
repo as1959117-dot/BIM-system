@@ -12,6 +12,7 @@
 
 <!-- QR Code library -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -286,6 +287,37 @@
       <!-- ── 14 RELATED ELEMENTS ── -->
       <div class="sec-heading">14 - Related Structural Elements</div>
       <div id="related-wrap"></div>
+
+
+      <!-- ── CHARTS SECTION ── -->
+      <div class="sec-heading">— Progress and Carbon Charts</div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h4>Construction Phase Progress — Beam 145</h4>
+          <canvas id="chart-progress"></canvas>
+        </div>
+        <div class="chart-card">
+          <h4>Carbon Emissions — Design Estimate vs Actual (kgCO2e)</h4>
+          <canvas id="chart-carbon"></canvas>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h4>5D Cost Breakdown by Work Package (GBP)</h4>
+          <canvas id="chart-cost"></canvas>
+        </div>
+        <div class="chart-card">
+          <h4>Construction Timeline — Planned vs Actual (Days from Start)</h4>
+          <canvas id="chart-timeline"></canvas>
+        </div>
+      </div>
+
+      <!-- ── REVIT SKETCHES AND GRAPHS ── -->
+      <div class="sec-heading">— BIM Model Views, Revit Graphs and Structural Sketches</div>
+      <div class="upload-note">
+        ⓘ To add your own Revit screenshots or structural sketches: open admin.html → load B145 → scroll to "Photos, Related Elements and Notes" → paste image URLs into the Photo URLs field → Save. Images will appear here automatically.
+      </div>
+      <div id="revit-wrap"></div>
 
       <!-- ── SYSTEM NOTE ── -->
       <div class="system-note">
