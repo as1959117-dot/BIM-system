@@ -221,8 +221,10 @@ function buildCostTable(d) {
       <td style="text-align:center"><b>${r.total}</b></td>
     </tr>`).join("");
 
-  set("cost-total", d.costTotal || "—");
-  set("cost-note",  d.costNote  || "Source: BCIS regional rates. Excludes preliminaries, overheads and profit.");
+  const ctEl = document.getElementById("cost-total");
+  if (ctEl) ctEl.textContent = d.costTotal || "—";
+  const cnEl = document.getElementById("cost-note");
+  if (cnEl) cnEl.textContent = d.costNote || "Source: BCIS regional rates. Excludes preliminaries, overheads and profit.";
 }
 
 // ── BUILD CARBON TABLES ──────────────────────────────────────
@@ -260,7 +262,8 @@ function buildCarbonTables(d) {
   }
 
   // Comparison note
-  set("carbon-compare", d.carbonComparison || "Carbon comparison data not yet available.");
+  const ccEl = document.getElementById("carbon-compare");
+  if (ccEl) ccEl.textContent = d.carbonComparison || "Carbon comparison data not yet available.";
 }
 
 // ── BUILD CONSTRUCTION LOG ───────────────────────────────────
