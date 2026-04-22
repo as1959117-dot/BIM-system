@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIM Element Data Sheet</title>
+<link rel="stylesheet" href="styles.css">
+
+<!-- Firebase SDK (v8 compat — works without build tools) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<!-- QR Code library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- LOADING STATE -->
+  <div id="loading-msg" class="loading-msg">Loading element data from database, please wait...</div>
+
+  <!-- MAIN CONTENT (hidden until data loads) -->
+  <div id="main-content" style="display:none;">
+
+    <!-- ── LETTERHEAD / HEADER ── -->
+    <div class="page-header">
+      <div class="ph-cell">
+        <div class="lbl">Prepared by</div>
+        <div class="val" id="hdr-company">—</div>
+        <div style="font-size:10px;color:#666;margin-top:2px;">BIM and Digital Construction</div>
+      </div>
+      <div class="ph-cell center">
+        <div class="lbl">Document Title</div>
+        <div class="val">BIM Digital Construction Data Sheet</div>
+        <div style="font-size:10.5px;color:#555;margin-top:2px;" id="hdr-project">—</div>
+      </div>
+      <div class="ph-cell right">
+        <div class="lbl">Document Reference</div>
+        <div class="val" id="hdr-docref">—</div>
+        <div style="font-size:10px;margin-top:2px;">Rev <span id="hdr-rev">—</span></div>
+        <div style="font-size:10px;color:#1c6b35;font-weight:bold;" id="hdr-status">—</div>
+      </div>
+    </div>
+
+    <!-- ── TITLE STRIP ── -->
+    <div class="title-strip">
+      <div>
+        <h1 id="title-element">Element Data Sheet</h1>
+        <p id="title-sub">—</p>
+        <p style="margin-top:3px;font-size:10px;color:#888;" id="title-date">—</p>
+      </div>
+      <div class="qr-area">
+        <div id="qr-canvas"></div>
+        <p class="qr-note">Scan for live construction<br>data and updates</p>
+      </div>
+    </div>
+
+    <!-- ── META ROW ── -->
+    <div class="meta-row">
+      <div class="meta-cell"><div class="ml">Project</div><div class="mv" id="meta-project">—</div></div>
+      <div class="meta-cell"><div class="ml">Element ID</div><div class="mv" id="meta-id">—</div></div>
+      <div class="meta-cell"><div class="ml">Grid / Level</div><div class="mv" id="meta-grid">—</div></div>
+      <div class="meta-cell"><div class="ml">Span / Orientation</div><div class="mv" id="meta-span">—</div></div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- ── LIVE STATUS ── -->
+      <div class="live-status">
+        <div class="ls-cell"><div class="ls-lbl">Status</div><div class="ls-val pending" id="ls-status">—</div></div>
+        <div class="ls-cell"><div class="ls-lbl">Current Activity</div><div class="ls-val" id="ls-activity">—</div></div>
+        <div class="ls-cell"><div class="ls-lbl">Last Updated</div><div class="ls-val" id="ls-updated">—</div></div>
+        <div class="ls-cell"><div class="ls-lbl">Updated by</div><div class="ls-val" id="ls-updatedby">—</div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label">
+          <span>Overall Construction Progress</span>
+          <span id="prog-pct" style="font-weight:bold;color:#1a3a6b;">—</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill" id="prog-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- ── 01 TECHNICAL DATA ── -->
+      <div class="sec-heading">01 - Technical Data Register</div>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width:40%">Category</th><th style="width:28%">Technical Value</th><th>BIM / Calculation Source</th></tr>
+        </thead>
+        <tbody>
+          <tr class="grp-row"><td colspan="3">Material Properties</td></tr>
+          <tr><td>Concrete Grade</td><td class="val-blue" id="td-concrete">—</td><td>Revit Material Library</td></tr>
+          <tr><td>Characteristic Compressive Strength (fck)</td><td id="td-fck">—</td><td>EN 206 — Concrete Specification</td></tr>
+          <tr><td>Reinforcement Steel Grade</td><td class="val-blue" id="td-steel">—</td><td>Revit Material Library</td></tr>
+          <tr><td>Characteristic Yield Strength (fyk)</td><td id="td-fyk">—</td><td>EN 1992-1-1 Section 3.2</td></tr>
+          <tr class="grp-row"><td colspan="3">Beam Geometry</td></tr>
+          <tr><td>Beam Width (b)</td><td id="td-width">—</td><td>Revit BIM Model</td></tr>
+          <tr><td>Overall Depth (h)</td><td id="td-depth">—</td><td>Revit BIM Model</td></tr>
+          <tr><td>Span / Height</td><td id="td-spanlen">—</td><td>Revit BIM Model</td></tr>
+          <tr class="grp-row"><td colspan="3">5D BIM Quantities — Model Extraction</td></tr>
+          <tr><td>Concrete Volume</td><td id="td-volume">—</td><td>Revit Schedule — Volume</td></tr>
+          <tr><td>Total Steel Reinforcement Weight</td><td id="td-steelwt">—</td><td>Revit — Rebar Schedule</td></tr>
+          <tr><td>Steel Density (Volume Ratio)</td><td id="td-density">—</td><td>Derived: Weight divided by Volume</td></tr>
+          <tr><td>Formwork Surface Area</td><td id="td-formwork">—</td><td>Revit — Formwork Schedule</td></tr>
+          <tr class="grp-row"><td colspan="3">Structural Forces — ULS Design Envelope</td></tr>
+          <tr><td>Maximum Sagging Moment — Midspan (Mt)</td><td id="td-moment">—</td><td>Robot Structural Analysis</td></tr>
+          <tr><td>Maximum Shear Force (VEd)</td><td id="td-shear">—</td><td>Robot Structural Analysis</td></tr>
+          <tr class="grp-row"><td colspan="3">Reinforcement Detailing</td></tr>
+          <tr><td>Bottom Longitudinal Bars — Midspan</td><td class="val-ok" id="td-bottombar">—</td><td>Robot — RC Design Module</td></tr>
+          <tr><td>Top Longitudinal Bars — Support</td><td class="val-ok" id="td-topbar">—</td><td>Robot — RC Design Module</td></tr>
+          <tr><td>Top Hanger Bars</td><td id="td-hangers">—</td><td>Robot — RC Design Module</td></tr>
+          <tr><td>Stirrups near Supports</td><td id="td-stir-sup">—</td><td>EN 1992-1-1 Calc Sheet</td></tr>
+          <tr><td>Stirrups at Midspan</td><td id="td-stir-span">—</td><td>EN 1992-1-1 Calc Sheet</td></tr>
+          <tr class="grp-row"><td colspan="3">Serviceability and Compliance (SLS)</td></tr>
+          <tr><td>Calculated Deflection</td><td id="td-deflection">—</td><td>Robot — SLS Check</td></tr>
+          <tr><td>Allowable Deflection Limit</td><td id="td-defl-allow">—</td><td>EN 1992-1-1 Section 7.4 (L/250)</td></tr>
+          <tr><td>Deflection Utilisation Ratio</td><td class="val-ok" id="td-defl-ratio">—</td><td>Robot — SLS Verification</td></tr>
+          <tr class="grp-row"><td colspan="3">Structural Notes</td></tr>
+          <tr><td colspan="2" id="td-notes">—</td><td>Site Engineer</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ── 02 STIRRUP SCHEDULE ── -->
+      <div class="sec-heading">02 - Stirrup Execution Spacing Schedule</div>
+      <div class="zone-row">
+        <div class="zone-box"><div class="zn">Zone 1</div><div class="zc">1x</div><div class="zs">0.07 m</div><div class="zt">End anchor</div></div>
+        <div class="zone-box"><div class="zn">Zone 2</div><div class="zc">20x</div><div class="zs">0.14 m</div><div class="zt">High shear</div></div>
+        <div class="zone-box"><div class="zn">Zone 3</div><div class="zc">6x</div><div class="zs">0.22 m</div><div class="zt">Transition</div></div>
+        <div class="zone-box"><div class="zn">Zone 4</div><div class="zc">13x</div><div class="zs">0.28 m</div><div class="zt">Midspan</div></div>
+        <div class="zone-box"><div class="zn">Zone 5</div><div class="zc">6x</div><div class="zs">0.22 m</div><div class="zt">Transition</div></div>
+        <div class="zone-box"><div class="zn">Zone 6</div><div class="zc">23x</div><div class="zs">0.12 m</div><div class="zt">High shear</div></div>
+      </div>
+      <p style="font-family:Arial;font-size:10.5px;color:#7a5800;font-style:italic;margin-bottom:5px;">
+        Note: Verify zone boundary transitions on site before concrete pour. Minimum spacing = 70 mm (Zone 1). Ref: EN 1992-1-1 Section 9.2.2
+      </p>
+
+      <!-- ── 03 COMPLIANCE ── -->
+      <div class="sec-heading">03 - Compliance and Site Inspection Notes</div>
+      <div class="comp-row">
+        <div class="comp-box">
+          <div class="cl">Deflection Check (SLS) — EN 1992-1-1 Section 7.4</div>
+          <div class="cv" id="comp-defl-val">—</div>
+          <div class="ct">Utilisation ratio = <b class="val-ok" id="comp-defl-ratio">—</b>. No pre-camber required. Section is singly reinforced and ductility is confirmed.</div>
+        </div>
+        <div class="comp-box caution">
+          <div class="cl">Shear Check — EN 1992-1-1 Section 6.2</div>
+          <div class="cv" id="comp-shear-val">—</div>
+          <div class="ct" id="comp-shear-note">—</div>
+        </div>
+      </div>
+      <div class="note">Bottom reinforcement: verify bar sizes, cover (minimum 30 mm) and spacer positions before concrete pour. Check at each support and at midspan.</div>
+      <div class="note">Total steel weight from BIM schedule: <b id="note-steelwt">—</b>. Verify delivery docket against rebar schedule before fixing. Discrepancy greater than 2% must be reported to the Site Engineer.</div>
+      <div class="note">Formwork area: <b id="note-formwork">—</b>. Design must account for full hydrostatic pressure of concrete. Verify striking schedule against minimum cube strength confirmed by the laboratory.</div>
+
+      <!-- ── 04 CONSTRUCTION LOG ── -->
+      <div class="sec-heading">04 - Construction Activity Log</div>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width:13%">Date</th><th style="width:18%">Activity</th><th>Description</th><th style="width:14%">Recorded by</th><th style="width:10%">Status</th></tr>
+        </thead>
+        <tbody id="log-tbody">
+          <tr><td colspan="5" style="text-align:center;color:#888;font-style:italic;">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ── 05 QA / TESTING ── -->
+      <div class="sec-heading">05 - Concrete Testing and QA Results</div>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width:28%">Test</th><th style="width:22%">Result</th><th style="width:16%">Requirement</th><th style="width:13%">Date</th><th>Status and Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Slump test (workability)</td><td id="qa-slump">—</td><td>60 to 180 mm (S3)</td><td>At pour</td><td class="val-ok">Tested on arrival before pour</td></tr>
+          <tr><td>7-day cube compressive strength</td><td id="qa-7day">—</td><td>Approx. 20 MPa</td><td>+7 days</td><td id="qa-7day-status" class="val-warn">Awaiting lab confirmation</td></tr>
+          <tr><td>28-day cube compressive strength</td><td id="qa-28day">—</td><td>Min. 25 MPa (for striking)</td><td>+28 days</td><td class="val-warn">Striking not authorised until confirmed</td></tr>
+          <tr><td>Cube samples taken</td><td id="qa-samples">—</td><td>Min. 4 per BS EN 12390</td><td>At pour</td><td>Delivered to <span id="qa-lab">—</span></td></tr>
+          <tr><td colspan="4">Overall QA approval status</td><td class="val-warn" id="qa-status">—</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ── 06 MATERIAL DELIVERIES ── -->
+      <div class="sec-heading">06 - Material Delivery Record</div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Material</th><th>Supplier</th><th>Batch ID</th><th>Quantity</th><th>Date</th><th>Status</th></tr>
+        </thead>
+        <tbody id="delivery-tbody">
+          <tr><td colspan="6" style="text-align:center;color:#888;font-style:italic;">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ── 07 5D COST ── -->
+      <div class="sec-heading">07 - 5D BIM Cost Estimation — Direct Construction Cost</div>
+      <p style="font-family:Arial;font-size:11px;color:#555;margin-bottom:6px;">
+        Note: Rates based on BCIS East Midlands Q1 2026 regional data. Excludes preliminaries, overheads and profit.
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width:38%">Work Package</th><th>Quantity</th><th>Unit</th><th>Supply Rate</th><th>Labour Rate</th><th>Total (GBP)</th></tr>
+        </thead>
+        <tbody id="cost-tbody">
+          <tr><td colspan="6" style="text-align:center;color:#888;font-style:italic;">Loading...</td></tr>
+        </tbody>
+        <tfoot>
+          <tr class="total-row"><td colspan="5">Total Direct Cost</td><td id="cost-total">—</td></tr>
+        </tfoot>
+      </table>
+      <p style="font-family:Arial;font-size:10px;color:#999;margin-top:2px;font-style:italic;" id="cost-note">—</p>
+
+      <!-- ── 08 CARBON ASSESSMENT ── -->
+      <div class="sec-heading">08 - Embodied Carbon Assessment</div>
+      <div class="carbon-wrap">
+        <div class="carbon-block">
+          <h4>Table A — Design Stage Carbon Estimate (at tender)</h4>
+          <table class="data-table">
+            <thead><tr><th>Material</th><th>Qty</th><th>Unit</th><th>Emission Factor</th><th>Carbon (kgCO2e)</th></tr></thead>
+            <tbody id="carbon-a-tbody"></tbody>
+            <tfoot><tr class="total-row"><td colspan="4">Total Design Carbon Estimate</td><td id="carbon-a-total">—</td></tr></tfoot>
+          </table>
+        </div>
+        <div class="carbon-block">
+          <h4>Table B — Actual Construction Carbon (as-built)</h4>
+          <table class="data-table">
+            <thead><tr><th>Material</th><th>Qty</th><th>Unit</th><th>Emission Factor</th><th>Carbon (kgCO2e)</th></tr></thead>
+            <tbody id="carbon-b-tbody"></tbody>
+            <tfoot><tr class="total-row"><td colspan="4">Total Actual Construction Carbon</td><td id="carbon-b-total">—</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="carbon-compare" id="carbon-compare">—</div>
+
+      <!-- ── 09 SITE ISSUES ── -->
+      <div class="sec-heading">09 - Site Issue Log</div>
+      <div id="issue-wrap"></div>
+
+      <!-- ── 10 REVISION RECORD ── -->
+      <div class="sec-heading">10 - Document Revision and Approval Record</div>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width:5%">Rev</th><th style="width:42%">Description of Issue</th><th style="width:12%">Prepared by</th><th style="width:18%">Checked and Approved</th><th style="width:12%">Date</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>P0</td>
+            <td>Preliminary issue — BIM quantities extracted, structural forces pending Robot Structural Analysis</td>
+            <td>Group 1</td><td>—</td><td>10 Mar 2026</td>
+            <td class="val-warn">For Review</td>
+          </tr>
+          <tr>
+            <td><b>P1</b></td>
+            <td>First Issue for Construction — Robot ULS/SLS results and EC2 calculation sheet incorporated, reinforcement schedule finalised, QR code assigned</td>
+            <td>Group 1</td><td>Lead Structural Engineer</td><td>22 Apr 2026</td>
+            <td class="val-ok">Approved — IFC</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ── 11 CONSTRUCTION PHASES ── -->
+      <div class="sec-heading">11 - Construction Phase Approval Checklist</div>
+      <table class="data-table">
+        <thead>
+          <tr><th style="width:3%">#</th><th style="width:17%">Phase</th><th>Description and Requirements</th><th style="width:10%">Standard</th><th style="width:13%">Approved by</th><th style="width:9%">Date</th><th style="width:9%">Status</th></tr>
+        </thead>
+        <tbody id="phase-tbody">
+          <tr><td colspan="7" style="text-align:center;color:#888;font-style:italic;">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ── 12 BIM INTEGRATION ── -->
+      <div class="sec-heading">12 - BIM Integration Record</div>
+      <div class="bim-note">
+        <div class="bn-cell"><div class="bn-lbl">Revit Element ID</div><div class="bn-val" id="bim-revit-id">—</div></div>
+        <div class="bn-cell"><div class="bn-lbl">BIM Model File</div><div class="bn-val" id="bim-file">—</div></div>
+        <div class="bn-cell"><div class="bn-lbl">Model Sync Status</div><div class="bn-val" id="bim-sync" style="color:#1c6b35;">—</div></div>
+        <div class="bn-cell"><div class="bn-lbl">Last Synchronised</div><div class="bn-val" id="bim-syncdate">—</div></div>
+        <div class="bn-cell"><div class="bn-lbl">Structural Analysis</div><div class="bn-val" id="bim-analysis">—</div></div>
+        <div class="bn-cell"><div class="bn-lbl">Live Record URL</div><div class="bn-val"><a id="bim-live-link" href="#" target="_blank">—</a></div></div>
+      </div>
+
+      <!-- ── 13 SITE PHOTOS ── -->
+      <div class="sec-heading">13 - Site Photo Log</div>
+      <div id="photo-wrap"></div>
+
+      <!-- ── 14 RELATED ELEMENTS ── -->
+      <div class="sec-heading">14 - Related Structural Elements</div>
+      <div id="related-wrap"></div>
+
+      <!-- ── SYSTEM NOTE ── -->
+      <div class="system-note">
+        <b>QR Code-Enabled BIM-Based Digital Construction Tracking System:</b><br>
+        This data sheet is part of a QR code-enabled digital construction tracking system. A QR code is physically attached to this structural element on site and, when scanned, opens this live record directly on any mobile device. The system links the physical element to its digital twin in the federated Revit BIM model, providing real-time access to construction status, QA test results, material delivery records, site issues and phased approval sign-offs. Any change made in the admin system is reflected here automatically. This replaces paper site records and ensures all team members are working from the same verified, up-to-date information, in full compliance with EN ISO 19650 information management requirements.
+      </div>
+
+      <!-- ── DISCLAIMER ── -->
+      <div class="disclaimer">
+        <span style="font-size:18px;margin-top:2px;">&#128737;</span>
+        <div>
+          <b>Verified Digital Twin Data — Issued for Construction</b>
+          This document has been generated from a federated BIM model (Autodesk Revit and Robot Structural Analysis) in accordance with EN ISO 19650. All quantities have been extracted directly from the model and verified by the Lead Structural Engineer. Any discrepancies between this sheet and issued structural drawings must be reported to the BIM Manager before proceeding with works.
+          <br><span style="font-size:10px;color:#999;">Document Reference: <span id="footer-id">—</span> — Revision <span id="footer-rev">—</span> — <span id="footer-date">—</span> — Prepared by: <span id="footer-grp">—</span></span>
+        </div>
+      </div>
+
+    </div><!-- end page-body -->
+
+    <!-- ── PAGE FOOTER ── -->
+    <div class="page-footer" style="padding:6px 14px;">
+      <span><b id="f-id">—</b></span>
+      <span>EN ISO 19650 — EN 1992-1-1 (EC2) — B500C — C35/45</span>
+      <span>Group 1 — <b>Issued for Construction</b></span>
+    </div>
+
+  </div><!-- end main-content -->
+</div><!-- end page-wrapper -->
+
+<script src="app.js"></script>
+<script>
+  // Extra: sync some note fields after data loads
+  const origPopulate = populatePage;
+  window.populatePage = function(d) {
+    origPopulate(d);
+    const ns = document.getElementById("note-steelwt");
+    const nf = document.getElementById("note-formwork");
+    const fi = document.getElementById("f-id");
+    if (ns) ns.textContent = d.steelWeight || "—";
+    if (nf) nf.textContent = d.formworkArea || "—";
+    if (fi) fi.textContent = d.docRef || "—";
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — BIM Construction Tracking System</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body class="admin-body">
+
+<div class="admin-wrapper">
+
+  <!-- ── ADMIN HEADER ── -->
+  <div class="admin-header">
+    <div>
+      <h1>BIM Construction Tracking — Admin Panel</h1>
+      <p>Lakeside Arts: Pavilion Expansion &nbsp;|&nbsp; Group 1 &nbsp;|&nbsp; Add, edit and update structural element records</p>
+    </div>
+    <div>
+      <a href="index.html?id=B145" style="color:#a8c8f8;font-size:11.5px;margin-right:12px;">View B145</a>
+      <a id="view-btn" href="#" target="_blank" style="color:#a8c8f8;font-size:11.5px;display:none;">View Element</a>
+    </div>
+  </div>
+
+  <!-- ── ALERT ── -->
+  <div id="admin-alert" class="alert alert-info hidden"></div>
+
+  <!-- ── ELEMENT LIST ── -->
+  <div class="admin-card">
+    <h2>Existing Elements — Click to Load and Edit</h2>
+    <div id="element-list">
+      <p style="color:#888;font-size:12px;font-style:italic;">Loading...</p>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-secondary" onclick="clearForm()">+ Start New Element</button>
+      <button class="btn btn-secondary" onclick="seedSampleData()" style="margin-left:8px;">Seed 3 Sample Elements (first use only)</button>
+    </div>
+  </div>
+
+  <!-- ── EDIT FORM ── -->
+  <div id="edit-form">
+
+    <div class="admin-card">
+      <h2 id="form-title">Add / Edit Element</h2>
+
+      <!-- Basic info -->
+      <div class="form-grid">
+        <div class="form-group"><label>Element ID *</label><input id="f-elementId" type="text" placeholder="e.g. B145, C12, S05" /></div>
+        <div class="form-group"><label>Element Type</label><input id="f-elementType" type="text" placeholder="e.g. RC Beam, RC Column, RC Slab" /></div>
+        <div class="form-group"><label>Company / Prepared by</label><input id="f-companyName" type="text" placeholder="e.g. Group 1 — BIM and Digital Construction" /></div>
+        <div class="form-group"><label>Project Name</label><input id="f-projectName" type="text" placeholder="e.g. Lakeside Arts: Pavilion Expansion" /></div>
+        <div class="form-group"><label>Document Reference</label><input id="f-docRef" type="text" placeholder="e.g. LAP-BIM-STR-B145-DS-001" /></div>
+        <div class="form-group"><label>Revision</label><input id="f-revision" type="text" placeholder="e.g. P1" /></div>
+        <div class="form-group"><label>Issue Status</label><input id="f-issueStatus" type="text" placeholder="e.g. Issued for Construction" /></div>
+        <div class="form-group"><label>Issue Date</label><input id="f-issueDate" type="text" placeholder="e.g. 22 Apr 2026" /></div>
+        <div class="form-group"><label>Prepared by</label><input id="f-preparedBy" type="text" placeholder="e.g. Group 1" /></div>
+        <div class="form-group"><label>Design Standard</label><input id="f-designStandard" type="text" placeholder="e.g. EN 1992-1-1 (EC2) — EN ISO 19650" /></div>
+      </div>
+    </div>
+
+    <!-- Location and geometry -->
+    <div class="admin-card">
+      <h2>Location and Geometry</h2>
+      <div class="form-grid">
+        <div class="form-group"><label>Grid Reference</label><input id="f-gridRef" type="text" placeholder="e.g. C/4 - C/6, Level 01" /></div>
+        <div class="form-group"><label>Level</label><input id="f-level" type="text" placeholder="e.g. Level 01 (+4.200 m)" /></div>
+        <div class="form-group"><label>Span / Height</label><input id="f-span" type="text" placeholder="e.g. 12.8228 m" /></div>
+        <div class="form-group"><label>Orientation</label><input id="f-orientation" type="text" placeholder="e.g. East to West" /></div>
+      </div>
+    </div>
+
+    <!-- Materials -->
+    <div class="admin-card">
+      <h2>Material Properties</h2>
+      <div class="form-grid">
+        <div class="form-group"><label>Concrete Grade</label><input id="f-concreteGrade" type="text" placeholder="e.g. C35/45" /></div>
+        <div class="form-group"><label>fck (MPa)</label><input id="f-fck" type="text" placeholder="e.g. 35.00 MPa" /></div>
+        <div class="form-group"><label>Steel Grade</label><input id="f-steelGrade" type="text" placeholder="e.g. B500C" /></div>
+        <div class="form-group"><label>fyk (MPa)</label><input id="f-fyk" type="text" placeholder="e.g. 500.00 MPa" /></div>
+        <div class="form-group"><label>Width (mm)</label><input id="f-width" type="text" placeholder="e.g. 400 mm" /></div>
+        <div class="form-group"><label>Depth / Height (mm)</label><input id="f-depth" type="text" placeholder="e.g. 1100 mm" /></div>
+      </div>
+    </div>
+
+    <!-- 5D Quantities -->
+    <div class="admin-card">
+      <h2>5D BIM Quantities</h2>
+      <div class="form-grid triple">
+        <div class="form-group"><label>Concrete Volume</label><input id="f-concreteVolume" type="text" placeholder="e.g. 5.99 m3" /></div>
+        <div class="form-group"><label>Steel Weight (kg)</label><input id="f-steelWeight" type="text" placeholder="e.g. 1,206.99 kg" /></div>
+        <div class="form-group"><label>Steel Density (kg/m3)</label><input id="f-steelDensity" type="text" placeholder="e.g. 201.36 kg/m3" /></div>
+        <div class="form-group"><label>Formwork Area (m2)</label><input id="f-formworkArea" type="text" placeholder="e.g. 35.66 m2" /></div>
+        <div class="form-group"><label>Bending Moment (kN.m)</label><input id="f-bendingMoment" type="text" placeholder="e.g. 1,470.14 kN.m" /></div>
+        <div class="form-group"><label>Shear Force (kN)</label><input id="f-shearForce" type="text" placeholder="e.g. 945.24 kN" /></div>
+      </div>
+    </div>
+
+    <!-- Reinforcement -->
+    <div class="admin-card">
+      <h2>Reinforcement Detailing</h2>
+      <div class="form-grid">
+        <div class="form-group"><label>Bottom Bars — Midspan</label><input id="f-bottomBars" type="text" placeholder="e.g. 8 phi25 (As = 3928 mm2)" /></div>
+        <div class="form-group"><label>Top Bars — Support</label><input id="f-topBars" type="text" placeholder="e.g. 12 phi25 (As = 5892 mm2)" /></div>
+        <div class="form-group"><label>Top Hanger Bars</label><input id="f-hangerBars" type="text" placeholder="e.g. 4 phi10" /></div>
+        <div class="form-group"><label>Stirrups near Supports</label><input id="f-stirrupsSupport" type="text" placeholder="e.g. 4 legs phi10 @ 125 mm" /></div>
+        <div class="form-group"><label>Stirrups at Midspan</label><input id="f-stirrupsSpan" type="text" placeholder="e.g. 4 legs phi10 @ 300 mm" /></div>
+        <div class="form-group"><label>Shear Check Note</label><input id="f-shearNote" type="text" placeholder="e.g. Shear links provided — VRd,s = 1028.6 kN > VEd" /></div>
+      </div>
+      <div class="form-grid" style="margin-top:8px;">
+        <div class="form-group"><label>Calculated Deflection</label><input id="f-deflectionActual" type="text" placeholder="e.g. 20 mm" /></div>
+        <div class="form-group"><label>Allowable Deflection</label><input id="f-deflectionAllow" type="text" placeholder="e.g. 51 mm" /></div>
+        <div class="form-group"><label>Deflection Ratio</label><input id="f-deflectionRatio" type="text" placeholder="e.g. 0.39 - PASS" /></div>
+        <div class="form-group form-full"><label>Structural Notes</label><textarea id="f-structuralNotes" placeholder="Any additional structural notes or caveats from the design team..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- Construction status -->
+    <div class="admin-card">
+      <h2>Construction Status — This Drives the Live Status on the Element Page</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Construction Status</label>
+          <select id="f-constructionStatus">
+            <option value="">Select status...</option>
+            <option>Not started</option>
+            <option>In Progress - Setting Out</option>
+            <option>In Progress - Formwork</option>
+            <option>In Progress - Reinforcement</option>
+            <option>In Progress - Concrete Pour</option>
+            <option>In Progress - Curing</option>
+            <option>In Progress - QA Testing</option>
+            <option>Completed</option>
+            <option>On Hold</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Current Activity (site description)</label><input id="f-currentActivity" type="text" placeholder="e.g. Concrete curing — polythene sheet protection applied" /></div>
+        <div class="form-group"><label>Progress Percentage (0-100)</label><input id="f-progressPercent" type="number" min="0" max="100" placeholder="e.g. 65" /></div>
+        <div class="form-group"><label>Updated by</label><input id="f-updatedBy" type="text" placeholder="e.g. Site Engineer - Group 1" /></div>
+        <div class="form-group form-full"><label>Last Updated (auto-fills on save, but you can override)</label><input id="f-lastUpdated" type="text" placeholder="e.g. 22 Apr 2026, 16:00" /></div>
+      </div>
+    </div>
+
+    <!-- Construction log -->
+    <div class="admin-card">
+      <h2>Construction Activity Log</h2>
+      <div id="log-entries"></div>
+      <button class="btn btn-secondary add-entry-btn" onclick="addLogEntry()">+ Add Log Entry</button>
+    </div>
+
+    <!-- QA and testing -->
+    <div class="admin-card">
+      <h2>Concrete Testing and QA Results</h2>
+      <div class="form-grid">
+        <div class="form-group"><label>Slump Test Result</label><input id="f-slumpTest" type="text" placeholder="e.g. 80 mm (S3 class) — Pass" /></div>
+        <div class="form-group"><label>7-day Cube Strength</label><input id="f-cube7day" type="text" placeholder="e.g. 26.4 MPa (awaiting lab confirmation)" /></div>
+        <div class="form-group"><label>28-day Cube Strength</label><input id="f-cube28day" type="text" placeholder="e.g. Pending — due 20 May 2026" /></div>
+        <div class="form-group"><label>Testing Laboratory</label><input id="f-testLab" type="text" placeholder="e.g. UKAS-accredited laboratory, Nottingham" /></div>
+        <div class="form-group"><label>Cube Samples Taken</label><input id="f-cubeSamples" type="text" placeholder="e.g. 4 cubes taken during pour" /></div>
+        <div class="form-group"><label>QA Approval Status</label><input id="f-qaApprovalStatus" type="text" placeholder="e.g. Pending 28-day cube result" /></div>
+      </div>
+    </div>
+
+    <!-- Material deliveries -->
+    <div class="admin-card">
+      <h2>Material Delivery Records</h2>
+      <div id="delivery-entries"></div>
+      <button class="btn btn-secondary add-entry-btn" onclick="addDelivery()">+ Add Delivery</button>
+    </div>
+
+    <!-- Issues -->
+    <div class="admin-card">
+      <h2>Site Issue Log</h2>
+      <div id="issue-entries"></div>
+      <button class="btn btn-secondary add-entry-btn" onclick="addIssue()">+ Add Issue</button>
+    </div>
+
+    <!-- Construction phases -->
+    <div class="admin-card">
+      <h2>Construction Phase Approval Checklist</h2>
+      <p style="font-size:11px;color:#888;margin-bottom:8px;">Update the status and date for each phase as work progresses. The element page updates automatically.</p>
+      <div id="phase-entries"></div>
+    </div>
+
+    <!-- BIM Integration -->
+    <div class="admin-card">
+      <h2>BIM Integration Details</h2>
+      <div class="form-grid">
+        <div class="form-group"><label>Revit Element ID</label><input id="f-revitElementId" type="text" placeholder="e.g. Beam - 145 (LAP-STR-L01)" /></div>
+        <div class="form-group"><label>BIM Model File</label><input id="f-bimFile" type="text" placeholder="e.g. Expansion after editing.RTD" /></div>
+        <div class="form-group"><label>Model Sync Status</label><input id="f-modelSyncStatus" type="text" placeholder="e.g. Up to date" /></div>
+        <div class="form-group"><label>Last Synchronised</label><input id="f-lastSynced" type="text" placeholder="e.g. 22 Apr 2026, 14:35" /></div>
+        <div class="form-group"><label>Structural Software</label><input id="f-structuralSoftware" type="text" placeholder="e.g. Robot Structural Analysis 2026" /></div>
+        <div class="form-group"><label>Live Record URL</label><input id="f-liveUrl" type="text" placeholder="e.g. https://as1959117-dot.github.io/Beam-145-/" /></div>
+      </div>
+    </div>
+
+    <!-- Cost -->
+    <div class="admin-card">
+      <h2>5D Cost Estimation Items</h2>
+      <div id="cost-entries"></div>
+      <button class="btn btn-secondary add-entry-btn" onclick="addCostItem()">+ Add Cost Item</button>
+      <div class="form-grid" style="margin-top:10px;">
+        <div class="form-group"><label>Total Direct Cost (GBP)</label><input id="f-costTotal" type="text" placeholder="e.g. 4,864.76" /></div>
+        <div class="form-group form-full"><label>Cost footnote / source</label><input id="f-costNote" type="text" placeholder="e.g. Source: BCIS East Midlands Q1 2026. Excludes prelims, OH and P." /></div>
+      </div>
+    </div>
+
+    <!-- Carbon -->
+    <div class="admin-card">
+      <h2>Embodied Carbon — Table A (Design Estimate)</h2>
+      <div id="carbon-design-entries"></div>
+      <button class="btn btn-secondary add-entry-btn" onclick="addCarbonDesign()">+ Add Row</button>
+      <div class="form-group" style="margin-top:8px;max-width:300px;">
+        <label>Total Design Carbon (kgCO2e)</label>
+        <input id="f-carbonDesignTotal" type="text" placeholder="e.g. 4,775.88" />
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Embodied Carbon — Table B (Actual As-Built)</h2>
+      <div id="carbon-actual-entries"></div>
+      <button class="btn btn-secondary add-entry-btn" onclick="addCarbonActual()">+ Add Row</button>
+      <div class="form-grid" style="margin-top:8px;">
+        <div class="form-group"><label>Total Actual Carbon (kgCO2e)</label><input id="f-carbonActualTotal" type="text" placeholder="e.g. 4,470.69" /></div>
+        <div class="form-group form-full"><label>Carbon comparison note</label><textarea id="f-carbonComparison" placeholder="e.g. Carbon reduction of 305.19 kgCO2e (6.4% below design estimate). Emission factors from ICE Database v3.0."></textarea></div>
+      </div>
+    </div>
+
+    <!-- Misc -->
+    <div class="admin-card">
+      <h2>Photos, Related Elements and Notes</h2>
+      <div class="form-grid">
+        <div class="form-group form-full">
+          <label>Photo URLs (one per line — image URLs that will appear in the site photo log)</label>
+          <textarea id="f-photoUrls" placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg" style="min-height:80px;"></textarea>
+        </div>
+        <div class="form-group form-full">
+          <label>Related Element IDs (comma separated — e.g. B144, C12, S05)</label>
+          <input id="f-relatedElementsText" type="text" placeholder="e.g. B144, C12, S05" />
+        </div>
+        <div class="form-group form-full">
+          <label>General Notes</label>
+          <textarea id="f-generalNotes" placeholder="Any general notes about this element..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save / delete buttons -->
+    <div class="admin-card">
+      <div class="btn-row">
+        <button id="save-btn" class="btn btn-primary">Save Element to Database</button>
+        <button id="clear-btn" class="btn btn-secondary">Clear Form</button>
+        <button id="delete-btn" class="btn btn-danger" style="display:none;">Delete Element</button>
+        <a id="view-btn" href="#" target="_blank" class="btn btn-secondary" style="display:none;text-decoration:none;">View Element Page</a>
+      </div>
+      <p style="font-size:10.5px;color:#888;margin-top:8px;">
+        Changes saved here will appear on the element's QR-linked page automatically — no page reload needed.
+      </p>
+    </div>
+
+  </div><!-- end edit-form -->
+
+</div><!-- end admin-wrapper -->
+
+<script src="admin.js"></script>
+</body>
+</html>
