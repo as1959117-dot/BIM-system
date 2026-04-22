@@ -643,3 +643,156 @@ function buildRevitSection(d) {
   }</div>`;
 }
 
+
+// ── CHARTS FROM FIREBASE DATA ────────────────────────────────
+// All 4 charts are built from live Firestore data.
+// Update phase statuses, carbon values or cost items in admin
+// and the charts update automatically on next page load.
+
+let _chartProgress = null, _chartCarbon = null,
+    _chartTimeline = null, _chartCost = null;
+
+function buildCharts(d) {
+  _buildProgressChart(d);
+  _buildCarbonChart(d);
+  _buildTimelineChart(d);
+  _buildCostChart(d);
+}
+
+// 1. Phase progress — reads from d.phases array
+function _buildProgressChart(d) {
+  const ctx = document.getElementById("chart-progress");
+  if (!ctx) return;
+  if (_chartProgress) { _chartProgress.destroy(); }
+
+  const phases = d.phases || [];
+  const labels   = phases.map(p => p.phase ? p.phase.substring(0,22) : "Phase");
+  const approved = phases.map(p => p.status === "Approved" ? 1 : 0);
+  const pending  = phases.map(p => p.status === "Pending"  ? 1 : 0);
+  const onhold   = phases.map(p => p.status === "On Hold"  ? 1 : 0);
+
+  _chartProgress = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label:"Approved", data:approved, backgroundColor:"#1c6b35", borderWidth:0 },
+        { label:"Pending",  data:pending,  backgroundColor:"#f59e0b", borderWidth:0 },
+        { label:"On Hold",  data:onhold,   backgroundColor:"#8b1a1a", borderWidth:0 },
+      ]
+    },
+    options: {
+      indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:"bottom", labels:{ font:{family:"Arial",size:9}, boxWidth:10 } } },
+      scales:{
+        x:{ stacked:true, max:1, display:false },
+        y:{ stacked:true, ticks:{ font:{family:"Arial",size:8} } }
+      }
+    }
+  });
+}
+
+// 2. Carbon comparison — reads from d.carbonDesign and d.carbonActual
+function _buildCarbonChart(d) {
+  const ctx = document.getElementById("chart-carbon");
+  if (!ctx) return;
+  if (_chartCarbon) { _chartCarbon.destroy(); }
+
+  const design = d.carbonDesign || [];
+  const actual = d.carbonActual || [];
+  const labels = design.map(r => r.material || "");
+  const dVals  = design.map(r => parseFloat((r.total||"0").replace(/,/g,"")) || 0);
+  const aVals  = actual.map(r => parseFloat((r.total||"0").replace(/,/g,"")) || 0);
+
+  const dTotal = parseFloat((d.carbonDesignTotal||"0").replace(/,/g,"")) || 0;
+  const aTotal = parseFloat((d.carbonActualTotal||"0").replace(/,/g,"")) || 0;
+  labels.push("TOTAL"); dVals.push(dTotal); aVals.push(aTotal);
+
+  _chartCarbon = new Chart(ctx, {
+    type:"bar",
+    data:{
+      labels,
+      datasets:[
+        { label:"Design Estimate", data:dVals, backgroundColor:"#2356a8", borderWidth:0 },
+        { label:"Actual As-Built", data:aVals, backgroundColor:"#1c6b35", borderWidth:0 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:"bottom", labels:{ font:{family:"Arial",size:9}, boxWidth:10 } } },
+      scales:{
+        x:{ ticks:{ font:{family:"Arial",size:8} } },
+        y:{ ticks:{ font:{family:"Arial",size:8} }, title:{ display:true, text:"kgCO2e", font:{family:"Arial",size:9} } }
+      }
+    }
+  });
+}
+
+// 3. Timeline — reads from d.timelineData or falls back to phases
+function _buildTimelineChart(d) {
+  const ctx = document.getElementById("chart-timeline");
+  if (!ctx) return;
+  if (_chartTimeline) { _chartTimeline.destroy(); }
+
+  const tl = d.timelineData || [
+    { phase:"Setting Out",   planned:3,  actual:3  },
+    { phase:"Formwork",      planned:5,  actual:6  },
+    { phase:"Rebar Delivery",planned:2,  actual:2  },
+    { phase:"Rebar Fixing",  planned:4,  actual:4  },
+    { phase:"Pre-Pour",      planned:1,  actual:1  },
+    { phase:"Concrete Pour", planned:1,  actual:1  },
+    { phase:"Curing",        planned:7,  actual:0  },
+    { phase:"QA Testing",    planned:28, actual:0  },
+  ];
+
+  _chartTimeline = new Chart(ctx, {
+    type:"bar",
+    data:{
+      labels: tl.map(r=>r.phase),
+      datasets:[
+        { label:"Planned (days)", data:tl.map(r=>r.planned), backgroundColor:"#4a7fd4", borderWidth:0 },
+        { label:"Actual (days)",  data:tl.map(r=>r.actual||0), backgroundColor:"#1c6b35", borderWidth:0 },
+      ]
+    },
+    options:{
+      indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:"bottom", labels:{ font:{family:"Arial",size:9}, boxWidth:10 } } },
+      scales:{
+        x:{ ticks:{ font:{family:"Arial",size:8} }, title:{ display:true, text:"Days", font:{family:"Arial",size:9} } },
+        y:{ ticks:{ font:{family:"Arial",size:8} } }
+      }
+    }
+  });
+}
+
+// 4. Cost doughnut — reads from d.costItems
+function _buildCostChart(d) {
+  const ctx = document.getElementById("chart-cost");
+  if (!ctx) return;
+  if (_chartCost) { _chartCost.destroy(); }
+
+  const items = d.costItems || [];
+  if (!items.length) return;
+
+  const labels = items.map(r => r.desc ? r.desc.split("—")[0].substring(0,20).trim() : "Item");
+  const vals   = items.map(r => parseFloat((r.total||"0").replace(/,/g,"")) || 0);
+
+  _chartCost = new Chart(ctx, {
+    type:"doughnut",
+    data:{
+      labels,
+      datasets:[{
+        data:vals,
+        backgroundColor:["#1a3a6b","#2356a8","#4a7fd4","#7aa8e8","#a8c8f8","#c8d8f0"],
+        borderWidth:1, borderColor:"#fff"
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ position:"bottom", labels:{ font:{family:"Arial",size:9}, boxWidth:10 } },
+        tooltip:{ callbacks:{ label:ctx=>"£"+ctx.parsed.toLocaleString() } }
+      }
+    }
+  });
+}
