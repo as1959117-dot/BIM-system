@@ -120,7 +120,7 @@ async function loadElement(docId) {
 
     document.getElementById("form-title").textContent = `Editing: ${d.elementId || docId}`;
     document.getElementById("delete-btn").style.display = "inline-block";
-    document.getElementById("view-btn").href = `index.html?id=${docId}`;
+    document.getElementById("view-btn").href = `index.html?id=${docId}`; document.getElementById("view-btn").target = "_blank";
     document.getElementById("view-btn").style.display = "inline-block";
 
     // Scroll to form
@@ -214,15 +214,26 @@ async function saveElement() {
     _savedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
+  // Parse related elements from text field if filled
+  const relText = getId("relatedElementsText");
+  if (relText) {
+    data.relatedElements = relText.split(",").map(s => {
+      const id = s.trim();
+      return { id, name: id };
+    });
+  }
+
   try {
     await db.collection("elements").doc(docId).set(data, { merge: true });
     currentElementId = docId;
-    showAlert(`Element "${docId}" saved successfully. The element page will update automatically.`, "success");
+    showAlert(`Element "${docId}" saved. The element page will update automatically.`, "success");
     document.getElementById("delete-btn").style.display = "inline-block";
-    document.getElementById("view-btn").href = `index.html?id=${docId}`;
+    document.getElementById("view-btn").href = `index.html?id=${docId}`; document.getElementById("view-btn").target = "_blank";
     document.getElementById("view-btn").style.display = "inline-block";
+    document.getElementById("form-title").textContent = `Editing: ${docId}`;
   } catch (err) {
-    showAlert("Error saving: " + err.message, "error");
+    console.error("Save error:", err);
+    showAlert("Error saving: " + err.message + " — Check Firebase rules and config.", "error");
   }
 }
 
@@ -339,7 +350,7 @@ function renderIssues() {
 
 // ── PHASES ────────────────────────────────────────────────────
 function initDefaultPhases() {
-  if (phases.length) return;
+  if (phases && phases.length) return;
   phases = [
     { num:"01", phase:"Substructure and Setting Out", description:"Survey check of column positions and pad levels. Grid lines confirmed against datum.", standard:"BS 5606", approvedBy:"Site Engineer", date:"—", status:"Pending" },
     { num:"02", phase:"Formwork Design and Erection", description:"Formwork designed for hydrostatic pressure of C35/45 concrete. Props and soffit inspected before rebar.", standard:"BS EN 13670", approvedBy:"Temp. Works Eng.", date:"—", status:"Pending" },

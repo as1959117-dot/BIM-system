@@ -60,28 +60,23 @@ function generateQR() {
   const qrEl = document.getElementById("qr-canvas");
   if (!qrEl) return;
 
-  const url = window.location.href;
+  // Build the URL for THIS specific element
+  const base = window.location.href.split("?")[0];
+  const url  = base + "?id=" + (elementId || "B145");
 
-  // Try QRCode library first
-  if (typeof QRCode !== "undefined") {
-    try {
-      new QRCode(qrEl, {
-        text: url,
-        width: 76,
-        height: 76,
-        colorDark: "#1a3a6b",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
-      return;
-    } catch(e) {}
-  }
+  // Clear any previous QR
+  qrEl.innerHTML = "";
 
-  // Fallback — use Google Charts API as an img tag
+  // Use QRServer API — always works, no library needed
   const img = document.createElement("img");
-  img.src = "https://api.qrserver.com/v1/create-qr-code/?size=76x76&ecc=H&data=" + encodeURIComponent(url);
-  img.alt = "QR Code for Beam 145 live record";
-  img.style.cssText = "width:76px;height:76px;border:1px solid #bbb;padding:2px;display:block;";
+  img.src = "https://api.qrserver.com/v1/create-qr-code/?size=78x78&ecc=H&data=" + encodeURIComponent(url);
+  img.alt = "QR Code — " + (elementId || "element") + " live record";
+  img.style.cssText = "width:78px;height:78px;display:block;border:1px solid #bbb;padding:2px;background:#fff;";
+  img.onerror = function() {
+    // Fallback if API fails — show URL text
+    qrEl.style.cssText = "width:78px;height:78px;border:1px solid #bbb;display:flex;align-items:center;justify-content:center;font-size:7px;color:#888;text-align:center;padding:4px;word-break:break-all;";
+    qrEl.textContent = url;
+  };
   qrEl.appendChild(img);
 }
 
