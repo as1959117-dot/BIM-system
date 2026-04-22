@@ -7,12 +7,12 @@
 // ── FIREBASE CONFIG ──────────────────────────────────────────
 // Same config as app.js — paste here too
 const firebaseConfig = {
-  apiKey:            "PASTE_YOUR_API_KEY",
-  authDomain:        "PASTE_YOUR_AUTH_DOMAIN",
-  projectId:         "PASTE_YOUR_PROJECT_ID",
-  storageBucket:     "PASTE_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
-  appId:             "PASTE_YOUR_APP_ID"
+  apiKey:            "AIzaSyACk7s3iAqID4cHxsHUyJWlY6KaC3yBLaE",
+  authDomain:        "bim-beam-145.firebaseapp.com",
+  projectId:         "bim-beam-145",
+  storageBucket:     "bim-beam-145.firebasestorage.app",
+  messagingSenderId: "1080298944444",
+  appId:             "1:1080298944444:web:571ac2de49dedb74195db9"
 };
 
 firebase.initializeApp(firebaseConfig);
