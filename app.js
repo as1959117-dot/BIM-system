@@ -58,16 +58,31 @@ window.addEventListener("DOMContentLoaded", () => {
 // ── GENERATE QR CODE ─────────────────────────────────────────
 function generateQR() {
   const qrEl = document.getElementById("qr-canvas");
-  if (!qrEl || typeof QRCode === "undefined") return;
+  if (!qrEl) return;
+
   const url = window.location.href;
-  new QRCode(qrEl, {
-    text: url,
-    width: 76,
-    height: 76,
-    colorDark: "#1a3a6b",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.H
-  });
+
+  // Try QRCode library first
+  if (typeof QRCode !== "undefined") {
+    try {
+      new QRCode(qrEl, {
+        text: url,
+        width: 76,
+        height: 76,
+        colorDark: "#1a3a6b",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      return;
+    } catch(e) {}
+  }
+
+  // Fallback — use Google Charts API as an img tag
+  const img = document.createElement("img");
+  img.src = "https://api.qrserver.com/v1/create-qr-code/?size=76x76&ecc=H&data=" + encodeURIComponent(url);
+  img.alt = "QR Code for Beam 145 live record";
+  img.style.cssText = "width:76px;height:76px;border:1px solid #bbb;padding:2px;display:block;";
+  qrEl.appendChild(img);
 }
 
 // ── POPULATE PAGE WITH ELEMENT DATA ─────────────────────────
