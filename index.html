@@ -221,8 +221,18 @@ table.dt tr.total td { background:var(--blue)!important; color:#fff!important; f
       <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
     </div>
 
-    <!-- 02 DESIGN VERIFICATION -->
-    <h2>02 — Design Verification Summary</h2>
+    <!-- 02 PROGRESS HISTORY -->
+    <h2>02 — Progress Timeline</h2>
+    <table class="dt">
+      <thead><tr><th style="width:15%">Date</th><th style="width:12%">Progress</th><th style="width:25%">Status</th><th>Activity / Milestone</th><th style="width:15%">Updated by</th></tr></thead>
+      <tbody id="progress-history-tbody">
+        <tr><td colspan="5" style="text-align:center;color:#888;font-style:italic;">Progress history will appear here when you update the element in admin.</td></tr>
+      </tbody>
+    </table>
+    <p style="font-family:Arial;font-size:10px;color:#888;font-style:italic;margin-top:3px;">Each time you update the progress percentage or status in admin, a new entry is added to this timeline automatically.</p>
+
+    <!-- 03 DESIGN VERIFICATION -->
+    <h2>04 — Design Verification Summary</h2>
     <div class="design-verify">
       <div class="dv-tick">&#10003;</div>
       <div class="dv-text">
@@ -232,7 +242,7 @@ table.dt tr.total td { background:var(--blue)!important; color:#fff!important; f
     </div>
 
     <!-- 03 ELEMENT DATA -->
-    <h2>03 — Element Data Register</h2>
+    <h2>04 — Element Data Register</h2>
     <table class="dt">
       <thead><tr><th style="width:40%">Parameter</th><th style="width:30%">Value</th><th>Source</th></tr></thead>
       <tbody>
@@ -259,32 +269,32 @@ table.dt tr.total td { background:var(--blue)!important; color:#fff!important; f
     </table>
 
     <!-- 04 CONSTRUCTION LOG -->
-    <h2>04 — Construction Activity Log</h2>
+    <h2>05 — Construction Activity Log</h2>
     <table class="dt">
       <thead><tr><th style="width:13%">Date</th><th style="width:20%">Activity</th><th>Description</th><th style="width:14%">Recorded by</th><th style="width:10%">Status</th></tr></thead>
       <tbody id="log-tbody"><tr><td colspan="5" style="text-align:center;color:#888;font-style:italic;">No log entries recorded.</td></tr></tbody>
     </table>
 
     <!-- 05 PHASES -->
-    <h2>05 — Construction Phase Approval</h2>
+    <h2>06 — Construction Phase Approval</h2>
     <table class="dt">
       <thead><tr><th style="width:3%">#</th><th style="width:20%">Phase</th><th>Description</th><th style="width:10%">Standard</th><th style="width:13%">Approved by</th><th style="width:9%">Date</th><th style="width:9%">Status</th></tr></thead>
       <tbody id="phase-tbody"><tr><td colspan="7" style="text-align:center;color:#888;font-style:italic;">No phase data.</td></tr></tbody>
     </table>
 
     <!-- 06 ISSUES -->
-    <h2>06 — Site Issue Log</h2>
+    <h2>07 — Site Issue Log</h2>
     <div id="issue-wrap"><p style="font-family:Arial;font-size:11.5px;color:#888;font-style:italic;">No issues recorded.</p></div>
 
     <!-- 07 MATERIALS -->
-    <h2>07 — Material Delivery Record</h2>
+    <h2>08 — Material Delivery Record</h2>
     <table class="dt">
       <thead><tr><th>Material</th><th>Supplier</th><th>Batch ID</th><th>Quantity</th><th>Date</th><th>Status</th></tr></thead>
       <tbody id="delivery-tbody"><tr><td colspan="6" style="text-align:center;color:#888;font-style:italic;">No deliveries recorded.</td></tr></tbody>
     </table>
 
     <!-- 08 QA -->
-    <h2>08 — Concrete Testing and QA</h2>
+    <h2>09 — Concrete Testing and QA</h2>
     <table class="dt">
       <thead><tr><th style="width:28%">Test</th><th style="width:22%">Result</th><th style="width:16%">Requirement</th><th style="width:13%">Date</th><th>Status</th></tr></thead>
       <tbody>
@@ -297,7 +307,7 @@ table.dt tr.total td { background:var(--blue)!important; color:#fff!important; f
     </table>
 
     <!-- 09 COST -->
-    <h2>09 — 5D BIM Cost Estimation</h2>
+    <h2>10 — 5D BIM Cost Estimation</h2>
     <table class="dt">
       <thead><tr><th style="width:40%">Work Package</th><th>Qty</th><th>Unit</th><th>Supply Rate</th><th>Labour Rate</th><th>Total (GBP)</th></tr></thead>
       <tbody id="cost-tbody"><tr><td colspan="6" style="text-align:center;color:#888;font-style:italic;">No cost data.</td></tr></tbody>
@@ -306,7 +316,7 @@ table.dt tr.total td { background:var(--blue)!important; color:#fff!important; f
     <p style="font-family:Arial;font-size:10px;color:#999;margin-top:3px;font-style:italic;" id="cost-note">—</p>
 
     <!-- 10 CARBON -->
-    <h2>10 — Embodied Carbon Assessment</h2>
+    <h2>11 — Embodied Carbon Assessment</h2>
     <div class="carbon-wrap">
       <div class="cb">
         <h4>Table A — Design Stage Estimate</h4>
@@ -328,7 +338,7 @@ table.dt tr.total td { background:var(--blue)!important; color:#fff!important; f
     <div class="carbon-result" id="carbon-compare">—</div>
 
     <!-- 11 CHARTS -->
-    <h2>11 — Construction Progress and Carbon Charts</h2>
+    <h2>12 — Construction Progress and Carbon Charts</h2>
     <div class="chart-grid">
       <div class="chart-card">
         <h4>Phase Progress — Approved / Pending / On Hold</h4>
@@ -351,7 +361,7 @@ table.dt tr.total td { background:var(--blue)!important; color:#fff!important; f
     </div>
 
     <!-- 12 BIM -->
-    <h2>12 — BIM Integration Record</h2>
+    <h2>13 — BIM Integration Record</h2>
     <div class="bim-bar">
       <div class="bc"><div class="bl">Revit Element ID</div><div class="bv" id="bim-id">—</div></div>
       <div class="bc"><div class="bl">BIM Model File</div><div class="bv" id="bim-file">—</div></div>
@@ -362,7 +372,7 @@ table.dt tr.total td { background:var(--blue)!important; color:#fff!important; f
     <div class="note">All technical data has been extracted from the federated BIM model (Autodesk Revit and Robot Structural Analysis) under EN ISO 19650. Any updates from the admin system are reflected here automatically.</div>
 
     <!-- 13 PHOTOS -->
-    <h2>13 — BIM Model Visual Reference</h2>
+    <h2>14 — BIM Model Visual Reference</h2>
     <div id="photo-wrap">
       <div class="photo-grid">
         <div class="photo-card" style="grid-column:span 2">
@@ -389,7 +399,7 @@ table.dt tr.total td { background:var(--blue)!important; color:#fff!important; f
     </div>
 
     <!-- REVISION -->
-    <h2>14 — Document Revision Record</h2>
+    <h2>15 — Document Revision Record</h2>
     <table class="dt">
       <thead><tr><th style="width:5%">Rev</th><th style="width:44%">Description</th><th style="width:12%">Prepared by</th><th style="width:16%">Approved by</th><th style="width:12%">Date</th><th>Status</th></tr></thead>
       <tbody id="rev-tbody">
@@ -621,6 +631,15 @@ function populate(d) {
   set("bim-sync", d.modelSyncStatus    || "—");
   set("bim-date", d.lastSynced         || "—");
   set("bim-sw",   d.structuralSoftware || "—");
+
+  // Progress history
+  const phTbody = document.getElementById("progress-history-tbody");
+  if (phTbody && (d.progressHistory||[]).length) {
+    phTbody.innerHTML = (d.progressHistory||[]).map(h => {
+      const pctClass = parseInt(h.progress) === 100 ? "ok" : parseInt(h.progress) >= 50 ? "pnd" : "";
+      return `<tr><td style="font-style:italic;color:#666">${h.date}</td><td style="text-align:center;font-weight:bold;color:var(--blue)" class="${pctClass}">${h.progress}%</td><td><b>${h.status}</b></td><td>${h.activity}</td><td style="font-style:italic;color:#666">${h.updatedBy}</td></tr>`;
+    }).reverse().join("");  // Reverse to show newest first
+  }
 
   // Revision
   set("rev-prep",  d.preparedBy || "Group 1");

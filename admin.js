@@ -223,6 +223,38 @@ async function saveElement() {
     });
   }
 
+  // Add progress history entry if progress or status changed
+  if (data.progressPercent || data.constructionStatus) {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"}) + 
+                    ", " + now.toTimeString().substring(0,5);
+    
+    // Get existing history or create new array
+    const existingDoc = await db.collection("elements").doc(docId).get();
+    const existingHistory = existingDoc.exists ? (existingDoc.data().progressHistory || []) : [];
+    
+    // Add new entry
+    const newEntry = {
+      date: dateStr,
+      progress: data.progressPercent || "0",
+      status: data.constructionStatus || "Not Started",
+      activity: data.currentActivity || "—",
+      updatedBy: data.updatedBy || "Site Engineer"
+    };
+    
+    // Check if this is actually a change (don't add duplicate entries)
+    const lastEntry = existingHistory.length > 0 ? existingHistory[existingHistory.length - 1] : null;
+    const isChange = !lastEntry || 
+                     lastEntry.progress !== newEntry.progress || 
+                     lastEntry.status !== newEntry.status;
+    
+    if (isChange) {
+      data.progressHistory = [...existingHistory, newEntry];
+    } else {
+      data.progressHistory = existingHistory;  // Keep existing
+    }
+  }
+
   try {
     await db.collection("elements").doc(docId).set(data, { merge: true });
     currentElementId = docId;
@@ -497,8 +529,8 @@ async function seedSampleData() {
       hangerBars:"4 phi10", stirrupsSupport:"4 legs phi10 @ 125 mm",
       stirrupsSpan:"4 legs phi10 @ 300 mm", deflectionActual:"20 mm",
       deflectionAllow:"51 mm", deflectionRatio:"0.39 - PASS",
-      constructionStatus:"In Progress - Curing", currentActivity:"Concrete curing — polythene sheet protection",
-      progressPercent:"65", lastUpdated:"22 Apr 2026, 16:00", updatedBy:"Site Engineer - Group 1",
+      constructionStatus:"Not Started", currentActivity:"Awaiting site mobilization",
+      progressPercent:"0", lastUpdated:"15 Mar 2026, 08:00", updatedBy:"Site Engineer - Group 1",
       slumpTest:"80 mm (S3 class) — Pass", cube7day:"26.4 MPa (awaiting lab confirmation)",
       cube28day:"Pending — due 20 May 2026", testLab:"UKAS-accredited laboratory, Nottingham",
       cubeSamples:"4 cubes taken during pour", qaApprovalStatus:"Pending 28-day cube result",
@@ -547,6 +579,9 @@ async function seedSampleData() {
         {id:"ISS-001", title:"Concrete cover below minimum — bottom bars midspan", identified:"08 Apr 2026 — Site Engineer", description:"Cover at 28mm against minimum 30mm. Spacer had shifted.", action:"Additional spacer installed, cover confirmed at 31mm. Re-inspected before pour.", standard:"EN 1992-1-1 S4.4.1", status:"Resolved"},
         {id:"ISS-002", title:"Stirrup spacing variance in Zone 4", identified:"10 Apr 2026 — Lead Structural Engineer", description:"Two stirrups at 295mm instead of 280mm.", action:"Repositioned and re-measured. Signed off before pour.", standard:"EN 1992-1-1 S9.2.2", status:"Resolved"},
         {id:"ISS-003", title:"Concrete delivery delayed 45 minutes", identified:"22 Apr 2026 — Site Foreman", description:"Tarmac truck could not enter main gate. Alternative entrance used.", action:"Delay under 60 minutes from batching. No quality impact.", standard:"BS EN 206", status:"Monitoring"},
+      ],
+      progressHistory:[
+        {date:"15 Mar 2026, 08:00", progress:"0", status:"Not Started", activity:"Awaiting site mobilization", updatedBy:"Site Engineer - Group 1"},
       ],
     },
     {
